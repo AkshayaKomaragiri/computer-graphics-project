@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mars — Jezero Crater Heightmap</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+      color: #ccc;
+    }
+
+    canvas { display: block; }
+
+    /* ── HUD ─────────────────────────────────────────────── */
+    #hud {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    #hud h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #e8ddd0;
+      margin-bottom: 4px;
+    }
+
+    #hud .sub {
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      color: #7a7065;
+    }
+
+    #legend {
+      position: fixed;
+      bottom: 24px;
+      left: 20px;
+      font-size: 0.66rem;
+      letter-spacing: 0.07em;
+      color: #5a534d;
+      pointer-events: none;
+      line-height: 1.8;
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 24px;
+      right: 20px;
+      font-size: 0.65rem;
+      letter-spacing: 0.07em;
+      color: #5a534d;
+      text-align: right;
+      pointer-events: none;
+      line-height: 1.8;
+    }
+
+    /* loading overlay */
+    #loading {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      z-index: 99;
+      transition: opacity 0.6s ease;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+
+    #loading p {
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #5a534d;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 2px solid #2a2520;
+      border-top-color: #8a7e74;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- Loading -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <p>Parsing elevation data…</p>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <h1>Jezero Crater</h1>
+    <div class="sub">Mars · 18.4°N 77.6°E · NASA MOLA MEG128</div>
+  </div>
+
+  <div id="legend">
+    ELEVATION RANGE<br>
+    MIN  −2907 m<br>
+    MAX  −1402 m<br>
+    ΔALT   1505 m
+  </div>
+
+  <div id="controls">
+    LEFT DRAG  ·  orbit<br>
+    RIGHT DRAG  ·  pan<br>
+    SCROLL  ·  zoom<br>
+    R  ·  reset camera
+  </div>
+
+  <!-- Three.js via CDN -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    /* ── metadata ──────────────────────────────────────── */
+    const META = {
+      elevMin: -2907,
+      elevMax: -1402,
+      imgW:    141,
+      imgH:    129,
+      heightmapSrc: 'data/jezero_heightmap.png'
+    };
+
+    const ELEV_RANGE = META.elevMax - META.elevMin;   // 1505 m
+
+    /* ── renderer ──────────────────────────────────────── */
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    /* ── scene / camera ────────────────────────────────── */
+    const scene  = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
+
+    const fov    = 45;
+    const camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 0.01, 1000);
+    const INIT_CAM = new THREE.Vector3(0, 1.4, 2.0);
+    camera.position.copy(INIT_CAM);
+
+    /* ── orbit controls ────────────────────────────────── */
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping    = true;
+    controls.dampingFactor    = 0.07;
+    controls.minDistance      = 0.3;
+    controls.maxDistance      = 8;
+    controls.target.set(0, 0, 0);
+
+    /* ── helpers ───────────────────────────────────────── */
+    // Read heightmap PNG via canvas → pixel buffer
+    function loadHeightData(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width  = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          resolve({ pixels: data.data, w: canvas.width, h: canvas.height });
+        };
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
+    /* ── build mesh ────────────────────────────────────── */
+    async function buildTerrain() {
+      const { pixels, w, h } = await loadHeightData(META.heightmapSrc);
+
+      // Plane segments match pixel grid (w-1 × h-1 quads)
+      const segX = w - 1;
+      const segZ = h - 1;
+
+      // Physical size: keep aspect ratio, normalize longest axis to 2
+      const aspect  = w / h;
+      const sizeX   = aspect >= 1 ? 2 : 2 * aspect;
+      const sizeZ   = aspect >= 1 ? 2 / aspect : 2;
+
+      // Max visual height — scale so crater relief is readable
+      const heightScale = 0.5;   // world units per 1505 m of elevation
+
+      const geometry = new THREE.PlaneGeometry(sizeX, sizeZ, segX, segZ);
+      geometry.rotateX(-Math.PI / 2);   // lay flat
+
+      const pos = geometry.attributes.position;
+      const vertCount = pos.count;
+
+      // PlaneGeometry vertices go row-by-row, left→right, top→bottom (when rotated)
+      // After rotateX: x stays x, y is up, z is old -y (south→north)
+      // Heightmap row 0 = north, row (h-1) = south → matches UV top→bottom
+
+      // Per-vertex grayscale color buffer
+      const colors = new Float32Array(vertCount * 3);
+
+      for (let i = 0; i < vertCount; i++) {
+        const col = i % w;                 // 0..w-1  left→right (west→east)
+        const row = Math.floor(i / w);     // 0..h-1  top→bottom (north→south)
+
+        // pixel index — RGBA stored top-left first
+        const px = (row * w + col) * 4;
+        const r  = pixels[px];            // 8-bit, 0=low, 255=high
+
+        // normalised elevation → world Y
+        const normElev = r / 255;
+        const worldY   = normElev * heightScale;
+        pos.setY(i, worldY);
+
+        // grayscale: low elevation → near black, high → near white
+        // slight gamma curve (pow 0.7) so mid tones open up a bit
+        const grey = Math.pow(normElev, 0.7);
+        colors[i * 3 + 0] = grey;
+        colors[i * 3 + 1] = grey;
+        colors[i * 3 + 2] = grey;
+      }
+
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      pos.needsUpdate = true;
+      geometry.computeVertexNormals();
+
+      /* ── materials ──────────────────────────────────────── */
+      // Solid filled mesh with per-vertex grayscale, no lighting
+      const solidMat = new THREE.MeshBasicMaterial({
+        vertexColors: true,
+        side: THREE.FrontSide,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1,
+      });
+
+      // Subtle dark wireframe so the grid still reads over the fill
+      const wireMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        wireframe: true,
+        opacity: 0.25,
+        transparent: true,
+      });
+
+      const solid = new THREE.Mesh(geometry, solidMat);
+      const wire  = new THREE.Mesh(geometry, wireMat);
+
+      const group = new THREE.Group();
+      group.add(solid);
+      group.add(wire);
+
+      // Center vertically so camera target (0,0,0) sits at mid-height
+      const halfH = heightScale / 2;
+      group.position.y = -halfH;
+
+      scene.add(group);
+    }
+
+    /* ── keyboard: reset camera ────────────────────────── */
+    window.addEventListener('keydown', e => {
+      if (e.key === 'r' || e.key === 'R') {
+        camera.position.copy(INIT_CAM);
+        controls.target.set(0, 0, 0);
+        controls.update();
+      }
+    });
+
+    /* ── resize ────────────────────────────────────────── */
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    /* ── render loop ───────────────────────────────────── */
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    /* ── boot ──────────────────────────────────────────── */
+    const loading = document.getElementById('loading');
+
+    buildTerrain().then(() => {
+      animate();
+      // fade out loading screen
+      loading.classList.add('hidden');
+      setTimeout(() => loading.remove(), 700);
+    }).catch(err => {
+      console.error('Failed to build terrain:', err);
+      loading.querySelector('p').textContent = 'Error loading heightmap.';
+    });
+  </script>
+</body>
+</html>
