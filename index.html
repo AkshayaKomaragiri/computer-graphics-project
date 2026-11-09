@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mars — Jezero Crater Heightmap</title>
+  <title>Mars Terrain Explorer</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -51,6 +51,8 @@
       line-height: 1.8;
     }
 
+    #elevation-range { white-space: pre-line; }
+
     #controls {
       position: fixed;
       bottom: 24px;
@@ -61,6 +63,80 @@
       text-align: right;
       pointer-events: none;
       line-height: 1.8;
+    }
+
+    #site-picker {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(0, 0, 0, 0.94);
+      z-index: 20;
+    }
+
+    #site-picker.visible { display: flex; }
+
+    #site-picker-panel {
+      width: min(680px, 100%);
+      max-height: 100%;
+      overflow-y: auto;
+    }
+
+    #site-picker h2 {
+      margin-bottom: 8px;
+      color: #e8ddd0;
+      font-size: 1.1rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    #site-picker p {
+      margin-bottom: 20px;
+      color: #7a7065;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+    }
+
+    #site-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+    }
+
+    .site-option {
+      padding: 15px;
+      border: 1px solid #39312a;
+      background: #100e0c;
+      color: #e8ddd0;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .site-option:hover,
+    .site-option:focus-visible {
+      border-color: #b18b67;
+      background: #1b1612;
+      outline: none;
+    }
+
+    .site-option strong,
+    .site-option span {
+      display: block;
+    }
+
+    .site-option strong {
+      margin-bottom: 7px;
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+    }
+
+    .site-option span {
+      color: #8d8175;
+      font-size: 0.63rem;
+      line-height: 1.6;
     }
 
     /* loading overlay */
@@ -101,20 +177,26 @@
   <!-- Loading -->
   <div id="loading">
     <div class="spinner"></div>
-    <p>Parsing elevation data…</p>
+    <p>Loading Mars sites…</p>
+  </div>
+
+  <div id="site-picker" role="dialog" aria-modal="true" aria-labelledby="site-picker-title">
+    <div id="site-picker-panel">
+      <h2 id="site-picker-title">Select a Mars site</h2>
+      <p>Choose a location to explore its elevation terrain.</p>
+      <div id="site-list"></div>
+    </div>
   </div>
 
   <!-- HUD -->
   <div id="hud">
-    <h1>Jezero Crater</h1>
-    <div class="sub">Mars · 18.4°N 77.6°E · NASA MOLA MEG128</div>
+    <h1 id="site-name"></h1>
+    <div class="sub" id="site-details"></div>
   </div>
 
   <div id="legend">
     ELEVATION RANGE<br>
-    MIN  −2907 m<br>
-    MAX  −1402 m<br>
-    ΔALT   1505 m
+    <span id="elevation-range"></span>
   </div>
 
   <div id="controls">
@@ -139,15 +221,14 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
     /* ── metadata ──────────────────────────────────────── */
-    const META = {
-      elevMin: -2907,
-      elevMax: -1402,
-      imgW:    141,
-      imgH:    129,
-      heightmapSrc: 'data/jezero_heightmap.png'
+    const JEZERO = {
+      name: 'Jezero Crater',
+      planet: 'Mars',
+      source: 'NASA MOLA MEG128',
+      heightmap: 'jezero_heightmap.png',
+      location: { latitude: 18.4, longitude: 77.6 },
+      elevation: { min: -2907, max: -1402, unit: 'meters' }
     };
-
-    const ELEV_RANGE = META.elevMax - META.elevMin;   // 1505 m
 
     /* ── renderer ──────────────────────────────────────── */
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -193,8 +274,11 @@
     }
 
     /* ── build mesh ────────────────────────────────────── */
-    async function buildTerrain() {
-      const { pixels, w, h } = await loadHeightData(META.heightmapSrc);
+    async function buildTerrain(site) {
+      const heightmapSrc = site.name === JEZERO.name
+        ? `data/${site.heightmap}`
+        : `output/${site.heightmap}`;
+      const { pixels, w, h } = await loadHeightData(heightmapSrc);
 
       // Plane segments match pixel grid (w-1 × h-1 quads)
       const segX = w - 1;
@@ -206,7 +290,7 @@
       const sizeZ   = aspect >= 1 ? 2 / aspect : 2;
 
       // Max visual height — scale so crater relief is readable
-      const heightScale = 0.5;   // world units per 1505 m of elevation
+      const heightScale = 0.5;   // world units across each site's elevation range
 
       const geometry = new THREE.PlaneGeometry(sizeX, sizeZ, segX, segZ);
       geometry.rotateX(-Math.PI / 2);   // lay flat
@@ -278,6 +362,59 @@
       scene.add(group);
     }
 
+    function formatCoordinate(value, positiveDirection, negativeDirection) {
+      const direction = value < 0 ? negativeDirection : positiveDirection;
+      return `${Math.abs(value)}°${direction}`;
+    }
+
+    function updateSiteDetails(site) {
+      const min = site.elevation.min;
+      const max = site.elevation.max;
+      document.title = `Mars — ${site.name} Heightmap`;
+      document.getElementById('site-name').textContent = site.name;
+      document.getElementById('site-details').textContent =
+        `Mars · ${formatCoordinate(site.location.latitude, 'N', 'S')} ` +
+        `${formatCoordinate(site.location.longitude, 'E', 'W')} · ${site.source}`;
+      document.getElementById('elevation-range').textContent =
+        `MIN  ${min} m\nMAX  ${max} m\nΔALT   ${max - min} m`;
+    }
+
+    function createSiteOption(site) {
+      const button = document.createElement('button');
+      button.className = 'site-option';
+      button.type = 'button';
+
+      const name = document.createElement('strong');
+      name.textContent = site.name;
+      const elevation = document.createElement('span');
+      elevation.textContent = `Elevation: ${site.elevation.min} to ${site.elevation.max} m`;
+      const location = document.createElement('span');
+      location.textContent =
+        `${formatCoordinate(site.location.latitude, 'N', 'S')} · ` +
+        `${formatCoordinate(site.location.longitude, 'E', 'W')}`;
+      button.append(name, elevation, location);
+      button.addEventListener('click', () => selectSite(site));
+      return button;
+    }
+
+    async function selectSite(site) {
+      const loading = document.getElementById('loading');
+      const loadingMessage = loading.querySelector('p');
+      loadingMessage.textContent = `Parsing ${site.name} elevation data…`;
+      loading.classList.remove('hidden');
+
+      try {
+        await buildTerrain(site);
+        updateSiteDetails(site);
+        document.getElementById('site-picker').classList.remove('visible');
+        animate();
+        loading.classList.add('hidden');
+      } catch (err) {
+        console.error(`Failed to build terrain for ${site.name}:`, err);
+        loadingMessage.textContent = `Error loading ${site.name}. Please reload and try again.`;
+      }
+    }
+
     /* ── keyboard: reset camera ────────────────────────── */
     window.addEventListener('keydown', e => {
       if (e.key === 'r' || e.key === 'R') {
@@ -304,14 +441,23 @@
     /* ── boot ──────────────────────────────────────────── */
     const loading = document.getElementById('loading');
 
-    buildTerrain().then(() => {
-      animate();
-      // fade out loading screen
+    Promise.all([
+      fetch('output/mars_sites_metadata.json').then(response => {
+        if (!response.ok) {
+          throw new Error(`Could not load site metadata (${response.status})`);
+        }
+        return response.json();
+      }),
+      Promise.resolve(JEZERO)
+    ]).then(([sites, jezero]) => {
+      const allSites = [jezero, ...sites];
+      const siteList = document.getElementById('site-list');
+      allSites.forEach(site => siteList.appendChild(createSiteOption(site)));
       loading.classList.add('hidden');
-      setTimeout(() => loading.remove(), 700);
+      document.getElementById('site-picker').classList.add('visible');
     }).catch(err => {
-      console.error('Failed to build terrain:', err);
-      loading.querySelector('p').textContent = 'Error loading heightmap.';
+      console.error('Failed to load Mars site metadata:', err);
+      loading.querySelector('p').textContent = 'Error loading Mars sites. Please reload the page.';
     });
   </script>
 </body>
