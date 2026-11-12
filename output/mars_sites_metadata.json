@@ -1,0 +1,170 @@
+[
+  {
+    "name": "Olympus Mons",
+    "planet": "Mars",
+    "source": "NASA MOLA MEG128",
+    "heightmap": "olympus_mons_heightmap.png",
+    "location": {
+      "latitude": 18.4,
+      "longitude": 226.0
+    },
+    "bounds": {
+      "west": 220.7,
+      "east": 231.0,
+      "south": 13.5,
+      "north": 23.6
+    },
+    "elevation": {
+      "min": -2578,
+      "max": 21249,
+      "unit": "meters"
+    },
+    "image": {
+      "width": 141,
+      "height": 129,
+      "bitDepth": 8,
+      "format": "grayscale",
+      "normalization": "per-site min/max"
+    }
+  },
+  {
+    "name": "Valles Marineris",
+    "planet": "Mars",
+    "source": "NASA MOLA MEG128",
+    "heightmap": "valles_marineris_heightmap.png",
+    "location": {
+      "latitude": -14.3,
+      "longitude": 302.0
+    },
+    "bounds": {
+      "west": 285.0,
+      "east": 315.0,
+      "south": -20.0,
+      "north": -5.0
+    },
+    "elevation": {
+      "min": -5773,
+      "max": 6966,
+      "unit": "meters"
+    },
+    "image": {
+      "width": 141,
+      "height": 129,
+      "bitDepth": 8,
+      "format": "grayscale",
+      "normalization": "per-site min/max"
+    }
+  },
+  {
+    "name": "Gale Crater",
+    "planet": "Mars",
+    "source": "NASA MOLA MEG128",
+    "heightmap": "gale_crater_heightmap.png",
+    "location": {
+      "latitude": -5.4,
+      "longitude": 137.8
+    },
+    "bounds": {
+      "west": 135.5,
+      "east": 140.0,
+      "south": -7.5,
+      "north": -3.0
+    },
+    "elevation": {
+      "min": -4648,
+      "max": 1412,
+      "unit": "meters"
+    },
+    "image": {
+      "width": 141,
+      "height": 129,
+      "bitDepth": 8,
+      "format": "grayscale",
+      "normalization": "per-site min/max"
+    }
+  },
+  {
+    "name": "Hellas Planitia",
+    "planet": "Mars",
+    "source": "NASA MOLA MEG128",
+    "heightmap": "hellas_planitia_heightmap.png",
+    "location": {
+      "latitude": -42.66,
+      "longitude": 70.0
+    },
+    "bounds": {
+      "west": 45.0,
+      "east": 95.0,
+      "south": -54.7,
+      "north": -27.7
+    },
+    "elevation": {
+      "min": -8208,
+      "max": 4329,
+      "unit": "meters"
+    },
+    "image": {
+      "width": 141,
+      "height": 129,
+      "bitDepth": 8,
+      "format": "grayscale",
+      "normalization": "per-site min/max"
+    }
+  },
+  {
+    "name": "Elysium Mons",
+    "planet": "Mars",
+    "source": "NASA MOLA MEG128",
+    "heightmap": "elysium_mons_heightmap.png",
+    "location": {
+      "latitude": 24.75,
+      "longitude": 146.44
+    },
+    "bounds": {
+      "west": 142.0,
+      "east": 151.0,
+      "south": 20.0,
+      "north": 30.0
+    },
+    "elevation": {
+      "min": -2088,
+      "max": 14115,
+      "unit": "meters"
+    },
+    "image": {
+      "width": 141,
+      "height": 129,
+      "bitDepth": 8,
+      "format": "grayscale",
+      "normalization": "per-site min/max"
+    }
+  },
+  {
+    "name": "Argyre Planitia",
+    "planet": "Mars",
+    "source": "NASA MOLA MEG128",
+    "heightmap": "argyre_planitia_heightmap.png",
+    "location": {
+      "latitude": -49.84,
+      "longitude": 316.69
+    },
+    "bounds": {
+      "west": 305.0,
+      "east": 328.0,
+      "south": -58.0,
+      "north": -42.0
+    },
+    "elevation": {
+      "min": -5250,
+      "max": 6130,
+      "unit": "meters"
+    },
+    "image": {
+      "width": 141,
+      "height": 129,
+      "bitDepth": 8,
+      "format": "grayscale",
+      "normalization": "per-site min/max"
+    }
+  }
+]
