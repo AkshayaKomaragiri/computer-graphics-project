@@ -1,0 +1,19 @@
+{
+  "sites": [
+    {
+      "name": "Jezero Crater",
+      "planet": "Mars",
+      "source": "NASA MOLA MEG128",
+      "heightmap": "jezero_heightmap.png",
+      "location": {
+        "latitude": 18.4,
+        "longitude": 77.6
+      },
+      "elevation": {
+        "min": -2907,
+        "max": -1402,
+        "unit": "meters"
+      }
+    }
+  ]
+}

@@ -269,9 +269,7 @@
     let animationStarted = false;
 
     async function buildTerrain(site) {
-      const heightmapSrc = site.name === JEZERO.name
-        ? `data/${site.heightmap}`
-        : `output/${site.heightmap}`;
+      const heightmapSrc = `data/${site.heightmap}`;
 
       const { pixels, w, h } = await loadHeightData(heightmapSrc);
       const segX = w - 1;
@@ -977,30 +975,33 @@
     const loading = document.getElementById('loading');
 
     Promise.all([
-      fetch('output/mars_sites_metadata.json').then(response => {
-        if (!response.ok) {
-          throw new Error(
-            `Could not load site metadata (${response.status})`
-          );
-        }
-        return response.json();
-      }),
-      Promise.resolve(JEZERO)
-    ]).then(([sites, jezero]) => {
-      const allSites = [jezero, ...sites];
-      const siteList = document.getElementById('site-list');
-
-      allSites.forEach(site =>
-        siteList.appendChild(createSiteOption(site))
+  fetch('data/sites.json').then(response => {
+    if (!response.ok) {
+      throw new Error(
+        `Could not load site metadata (${response.status})`
       );
+    }
+    return response.json();
+  })
+]).then(([data]) => {
 
-      loading.classList.add('hidden');
-      document.getElementById('site-picker').classList.add('visible');
-    }).catch(err => {
-      console.error('Failed to load Mars site metadata:', err);
-      loading.querySelector('p').textContent =
-        'Error loading Mars sites. Please reload the page.';
-    });
+  const sites = data.sites;
+
+  const siteList = document.getElementById('site-list');
+
+  sites.forEach(site => {
+    siteList.appendChild(createSiteOption(site));
+  });
+
+  loading.classList.add('hidden');
+  document.getElementById('site-picker').classList.add('visible');
+
+}).catch(err => {
+  console.error('Failed to load Mars site metadata:', err);
+
+  loading.querySelector('p').textContent =
+    'Error loading Mars sites. Please reload the page.';
+});
   </script>
 </body>
 </html>
