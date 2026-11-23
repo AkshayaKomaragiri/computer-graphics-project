@@ -1748,3 +1748,47 @@ details p {
     top: 190px;
   }
 }
+/* Startup recovery stays readable when modules, data, or WebGL fail. */
+#loading.startup-error {
+  padding: 28px;
+  overflow-y: auto;
+  text-align: center;
+}
+#loading.startup-error > p {
+  max-width: 450px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+#startup-help {
+  max-width: 470px;
+  margin-top: 18px;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #ffffff05;
+}
+#startup-help p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+#startup-help strong {
+  color: var(--text);
+  font-weight: 550;
+}
+#startup-help code {
+  color: #efc4ad;
+  white-space: nowrap;
+}
+#startup-details {
+  max-width: 470px;
+  width: 100%;
+  margin-top: 14px;
+  text-align: left;
+}
+#startup-error-details {
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+}

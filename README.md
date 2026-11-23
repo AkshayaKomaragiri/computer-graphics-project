@@ -6,15 +6,20 @@ Development branch: `terrian-analysis-integration`.
 
 ## Run locally
 
-From this repository, run:
+Use Python 3 and launch the complete project folder:
 
-```sh
-python3 -m http.server 8765 --bind 127.0.0.1
-```
+- **Mac:** double-click `start.command`.
+- **Windows:** double-click `start.bat`.
+- **Terminal (Mac/Linux):** `python3 start.py`.
+- **Terminal (Windows):** `py start.py`.
 
-Open [http://127.0.0.1:8765](http://127.0.0.1:8765). The app needs a WebGL-capable browser. No build or package installation is required. Serve over HTTP rather than opening `index.html` as a local file.
+The launcher opens the app in your browser and prints its local address. Keep its window open while exploring. It serves the project directory regardless of your terminal's current folder, sets the correct JavaScript types for module files, and automatically chooses another local port if 8765 is busy. No packages need to be installed.
 
-Three.js 0.168.0 and OrbitControls are vendored with their MIT license. Google Fonts are optional; the interface falls back to system fonts when offline. All terrain and analysis work locally.
+Do not double-click `index.html`: browsers block the module and terrain-data requests from a `file://` page. The app now explains how to launch instead of leaving the loading screen spinning.
+
+For an existing static web server, serve this directory over HTTP and ensure `.mjs` and `.js` files use a JavaScript content type (for example, `text/javascript`). The app reports failed imports and a stalled startup with recovery instructions and expandable error details. Direct relative imports avoid requiring import-map support.
+
+Three.js 0.168.0 and OrbitControls are vendored with their MIT license. OrbitControls has one local import-path adjustment so it shares the same Three.js module as the app. Google Fonts are optional; the interface falls back to system fonts when offline. The app needs a WebGL-capable browser.
 
 ## Explore
 
@@ -39,6 +44,7 @@ With Node.js 20 or later:
 
 ```sh
 node --test tests/*.test.mjs
+python3 -m unittest discover -s tests -p "test_*.py"
 ```
 
 Analytical fixtures test flat terrain, a known tilted plane, local bumps, geographic orientation, interpolation, profile distance, and invalid inputs. Catalog tests check that every region has its heightmap and spatial metadata. See [testing notes](docs/TESTING.md) for the browser checks.

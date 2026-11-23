@@ -14,14 +14,6 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='18' fill='%23f0784f'/%3E%3Cpath d='M5 25L16 12l9 13 5-7 7 10' stroke='%23101315' fill='none' stroke-width='3'/%3E%3C/svg%3E"
     />
     <link rel="stylesheet" href="app.css" />
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "./vendor/three/three.module.js",
-          "three/addons/controls/OrbitControls.js": "./vendor/three/OrbitControls.js"
-        }
-      }
-    </script>
   </head>
   <body>
     <svg
@@ -259,10 +251,28 @@
           inspect
         </div>
         <div id="loading" role="status">
-          <div class="loading-orbit"></div>
-          <h2>Preparing your expedition</h2>
+          <div id="loading-spinner" class="loading-orbit"></div>
+          <h2 id="loading-title">Preparing your expedition</h2>
           <p id="loading-message">Reading the Martian landscape…</p>
           <button id="retry" hidden>Try again</button>
+          <div id="startup-help" hidden>
+            <p>
+              Open Mars Atlas using <strong>start.command</strong> on Mac or
+              <strong>start.bat</strong> on Windows. Keep the launcher window
+              open while exploring.
+            </p>
+            <p>
+              Or run <code>python3 start.py</code> from the project folder
+              (<code>py start.py</code> on Windows). Python 3 is required.
+            </p>
+          </div>
+          <details id="startup-details" hidden>
+            <summary>Error details</summary>
+            <pre id="startup-error-details"></pre>
+          </details>
+          <noscript
+            ><p>JavaScript must be enabled to display the terrain.</p></noscript
+          >
         </div>
       </main>
       <aside
@@ -482,6 +492,20 @@
         Let's explore
       </button>
     </dialog>
-    <script type="module" src="js/app.mjs"></script>
+    <script src="js/startup.js"></script>
+    <script>
+      if (typeof startMarsAtlas === "function") {
+        startMarsAtlas(function () {
+          return import("./js/app.mjs?v=startup-1");
+        });
+      } else {
+        document.getElementById("loading-spinner").hidden = true;
+        document.getElementById("loading-title").textContent =
+          "App files are missing";
+        document.getElementById("loading-message").textContent =
+          "Download the entire project folder, then open it with its launcher.";
+        document.getElementById("startup-help").hidden = false;
+      }
+    </script>
   </body>
 </html>

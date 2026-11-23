@@ -1,5 +1,5 @@
-import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import * as THREE from "../vendor/three/three.module.js";
+import { OrbitControls } from "../vendor/three/OrbitControls.js?v=local-imports-1";
 import {
   analyzeTerrain,
   sampleField,
@@ -874,6 +874,14 @@ function updateOverview() {
 async function selectSite(site) {
   const request = ++state.request;
   $("loading").hidden = false;
+  $("loading").classList.remove("startup-error");
+  $("loading").setAttribute("role", "status");
+  const spinner = $("loading").querySelector(".loading-orbit");
+  if (spinner) spinner.hidden = false;
+  $("loading").querySelector("h2").textContent = "Preparing your expedition";
+  for (const id of ["startup-help", "startup-details"]) {
+    if ($(id)) $(id).hidden = true;
+  }
   $("retry").hidden = true;
   $("loading-message").textContent = `Reading ${site.name} elevation data…`;
   closeDrawers();
@@ -913,7 +921,13 @@ async function selectSite(site) {
 function showError(message) {
   console.error(message);
   $("loading").hidden = false;
+  $("loading").classList.add("startup-error");
+  $("loading").setAttribute("role", "alert");
+  $("loading").querySelector("h2").textContent = "Unable to load the explorer";
+  const spinner = $("loading").querySelector(".loading-orbit");
+  if (spinner) spinner.hidden = true;
   $("loading-message").textContent = message;
+  if ($("startup-help")) $("startup-help").hidden = false;
   $("retry").hidden = false;
 }
 function buildRegionList() {
@@ -1173,11 +1187,19 @@ function setupUI() {
   window.addEventListener("resize", () => {
     if (!$("drawer-backdrop").hidden) closeDrawers();
   });
-  $("retry").addEventListener("click", () => location.reload());
+  if (typeof window.startMarsAtlas !== "function") {
+    $("retry").addEventListener("click", () => location.reload());
+  }
 }
-async function init() {
-  setupUI();
+let initialization;
+export function init() {
+  if (!initialization) initialization = initialize();
+  return initialization;
+}
+
+async function initialize() {
   try {
+    setupUI();
     setupScene();
     const response = await fetch("data/sites.json");
     if (!response.ok)
@@ -1197,4 +1219,7 @@ async function init() {
     showError(error.message);
   }
 }
+
+// Keep cached copies of the previous HTML entry point working, while letting
+// the startup guard await the same initialization without starting it twice.
 init();
