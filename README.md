@@ -4,7 +4,33 @@ A browser-based Mars terrain field station built on the `heightmap` branch. Expl
 
 Development branch: `terrian-analysis-integration`.
 
+## Open online — no setup
+
+**[Explore the updated Mars Atlas](https://mars-atlas-explorer.rick-1354.chatgpt.site/#Jezero%20Crater)**
+
+Share this link with anyone who wants to try the app. They do not need Git, Python, or a downloaded project folder. This is the published Mars Atlas app; the earlier MarsPath prototype has a separate link.
+
+## Which way should I open it?
+
+| Method | What opens | When to use it |
+| --- | --- | --- |
+| Hosted link above (`https://…chatgpt.site`) | The published copy, served over the internet | Exploring or sharing with others; works while your computer is off |
+| Local launcher (`http://127.0.0.1:…`) | The files in your own downloaded project folder | Developing and testing changes; keep the launcher running |
+| Double-click `index.html` (`file://…`) | A file directly from your disk | The full app cannot load this way because browsers restrict its module and data requests; use the online link or launcher instead |
+
+`127.0.0.1` (also called `localhost`) means **the computer opening the link**. Sending your local address to a teammate will not open your app on their computer. Each teammate can run their own local copy, or everyone can use the hosted link.
+
+The hosted app is a published snapshot. Pulling or pushing this GitHub branch does **not** automatically update the hosted site; it must be published again. Local edits affect only your local copy until committed and pushed, and teammates must pull those commits to receive them.
+
 ## Run locally
+
+To get the latest branch updates, open a terminal in your existing `computer-graphics-project` folder and run:
+
+```sh
+git fetch origin
+git switch terrian-analysis-integration
+git pull --ff-only origin terrian-analysis-integration
+```
 
 Use Python 3 and launch the complete project folder:
 

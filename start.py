@@ -8,6 +8,7 @@ import sys
 import webbrowser
 
 PROJECT_ROOT = Path(__file__).resolve().parent
+HOSTED_URL = "https://mars-atlas-explorer.rick-1354.chatgpt.site/#Jezero%20Crater"
 
 
 class AppHandler(SimpleHTTPRequestHandler):
@@ -50,6 +51,8 @@ def main(argv=None):
         url = "http://127.0.0.1:{}/".format(server.server_address[1])
         print("Mars Atlas is running at {}".format(url), flush=True)
         print("Keep this window open while exploring. Press Ctrl+C to stop.", flush=True)
+        print("Share the online version (no setup): {}".format(HOSTED_URL), flush=True)
+        print("The local address above works only on this computer.", flush=True)
         if not args.no_browser:
             webbrowser.open(url)
         try:
