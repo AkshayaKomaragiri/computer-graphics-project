@@ -1,1007 +1,488 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mars Terrain Explorer</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #000;
-      overflow: hidden;
-      font-family: 'Courier New', monospace;
-      color: #ccc;
-    }
-    canvas { display: block; }
-    #hud {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      pointer-events: none;
-      user-select: none;
-    }
-    #hud h1 {
-      font-size: 1.15rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: #e8ddd0;
-      margin-bottom: 4px;
-    }
-    #hud .sub {
-      font-size: 0.68rem;
-      letter-spacing: 0.08em;
-      color: #7a7065;
-    }
-    #legend {
-      position: fixed;
-      bottom: 24px;
-      left: 20px;
-      font-size: 0.66rem;
-      letter-spacing: 0.07em;
-      color: #5a534d;
-      pointer-events: none;
-      line-height: 1.8;
-    }
-    #elevation-range { white-space: pre-line; }
-    #controls {
-      position: fixed;
-      bottom: 24px;
-      right: 20px;
-      font-size: 0.65rem;
-      letter-spacing: 0.07em;
-      color: #5a534d;
-      text-align: right;
-      pointer-events: none;
-      line-height: 1.8;
-    }
-    #site-picker {
-      position: fixed;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: rgba(0, 0, 0, 0.94);
-      z-index: 20;
-    }
-    #site-picker.visible { display: flex; }
-    #site-picker-panel {
-      width: min(680px, 100%);
-      max-height: 100%;
-      overflow-y: auto;
-    }
-    #site-picker h2 {
-      margin-bottom: 8px;
-      color: #e8ddd0;
-      font-size: 1.1rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-    #site-picker p {
-      margin-bottom: 20px;
-      color: #7a7065;
-      font-size: 0.72rem;
-      letter-spacing: 0.06em;
-    }
-    #site-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 10px;
-    }
-    .site-option {
-      padding: 15px;
-      border: 1px solid #39312a;
-      background: #100e0c;
-      color: #e8ddd0;
-      font: inherit;
-      text-align: left;
-      cursor: pointer;
-    }
-    .site-option:hover,
-    .site-option:focus-visible {
-      border-color: #b18b67;
-      background: #1b1612;
-      outline: none;
-    }
-    .site-option strong,
-    .site-option span { display: block; }
-    .site-option strong {
-      margin-bottom: 7px;
-      font-size: 0.78rem;
-      letter-spacing: 0.06em;
-    }
-    .site-option span {
-      color: #8d8175;
-      font-size: 0.63rem;
-      line-height: 1.6;
-    }
-    #loading {
-      position: fixed;
-      inset: 0;
-      background: #000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 18px;
-      z-index: 99;
-      transition: opacity 0.6s ease;
-    }
-    #loading.hidden { opacity: 0; pointer-events: none; }
-    #loading p {
-      font-size: 0.75rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: #5a534d;
-    }
-    .spinner {
-      width: 36px;
-      height: 36px;
-      border: 2px solid #2a2520;
-      border-top-color: #8a7e74;
-      border-radius: 50%;
-      animation: spin 0.9s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    #back-button {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      width: 42px;
-      height: 42px;
-      background: rgba(20, 16, 13, 0.8);
-      color: #c18b69;
-      border: 1px solid #855747;
-      border-radius: 6px;
-      font-family: 'Courier New', monospace;
-      font-size: 26px;
-      font-weight: bold;
-      cursor: pointer;
-      z-index: 10;
-      display: none;
-    }
-    #back-button:hover { background: #654239; color: white; }
-  </style>
-</head>
-<body>
-
-  <div id="loading">
-    <div class="spinner"></div>
-    <p>Loading Mars sites…</p>
-  </div>
-
-  <div id="site-picker" role="dialog" aria-modal="true" aria-labelledby="site-picker-title">
-    <div id="site-picker-panel">
-      <h2 id="site-picker-title">Select a Mars site</h2>
-      <p>Choose a location to explore its elevation terrain.</p>
-      <div id="site-list"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#101315" />
+    <meta
+      name="description"
+      content="A field station for the red planet. Explore seven Martian landscapes, inspect terrain, and trace elevation profiles."
+    />
+    <title>Mars Atlas · Terrain field station</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='18' fill='%23f0784f'/%3E%3Cpath d='M5 25L16 12l9 13 5-7 7 10' stroke='%23101315' fill='none' stroke-width='3'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="app.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three/three.module.js",
+          "three/addons/controls/OrbitControls.js": "./vendor/three/OrbitControls.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <svg
+      class="icon-definitions"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        <symbol id="i-mountain" viewBox="0 0 24 24">
+          <path d="m2 19 8-13 5 8 3-5 5 10H2Z" />
+          <path d="m7 11 3 2 2-3" />
+        </symbol>
+        <symbol id="i-globe" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+          <ellipse cx="12" cy="12" rx="4" ry="9" />
+          <path d="M3 12h18M5 6.5c4 2 10 2 14 0M5 17.5c4-2 10-2 14 0" />
+        </symbol>
+        <symbol id="i-pin" viewBox="0 0 24 24">
+          <path d="M18 10c0 5-6 11-6 11S6 15 6 10a6 6 0 1 1 12 0Z" />
+          <circle cx="12" cy="10" r="2" />
+        </symbol>
+        <symbol id="i-profile" viewBox="0 0 24 24">
+          <path d="M3 4v16h18M5 15l4-5 4 3 6-8" />
+          <circle cx="5" cy="15" r="1" />
+          <circle cx="19" cy="5" r="1" />
+        </symbol>
+        <symbol id="i-reset" viewBox="0 0 24 24">
+          <path d="M4 9a8 8 0 1 1 0 6M4 3v6h6" />
+        </symbol>
+        <symbol id="i-sun" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="4" />
+          <path
+            d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
+          />
+        </symbol>
+        <symbol id="i-orbit" viewBox="0 0 24 24">
+          <ellipse
+            cx="12"
+            cy="12"
+            rx="10"
+            ry="4"
+            transform="rotate(-35 12 12)"
+          />
+          <circle cx="12" cy="12" r="4" />
+        </symbol>
+        <symbol id="i-layers" viewBox="0 0 24 24">
+          <path d="m12 3 10 6-10 6L2 9l10-6Zm-10 11 10 6 10-6" />
+        </symbol>
+        <symbol id="i-close" viewBox="0 0 24 24">
+          <path d="m6 6 12 12M6 18 18 6" />
+        </symbol>
+        <symbol id="i-download" viewBox="0 0 24 24">
+          <path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" />
+        </symbol>
+      </defs>
+    </svg>
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Mars Atlas home"
+        ><span class="brand-mark"
+          ><svg><use href="#i-mountain" /></svg></span
+        ><span
+          >MARS<span class="brand-light"> ATLAS</span
+          ><small>TERRAIN FIELD STATION</small></span
+        ></a
+      >
+      <nav aria-label="Primary">
+        <span class="nav-current">Explore</span
+        ><button id="guide-open">
+          Field guide <span class="shortcut">?</span>
+        </button>
+      </nav>
+      <div class="mission-label">
+        <svg class="icon"><use href="#i-globe" /></svg
+        ><span>The red planet, in detail</span>
+      </div>
+    </header>
+    <div class="workspace">
+      <aside class="regions panel" id="regions-panel" aria-label="Mars regions">
+        <div class="panel-heading">
+          <span class="eyebrow">YOUR NEXT DISCOVERY</span
+          ><button
+            class="icon-button drawer-close"
+            data-close="regions"
+            aria-label="Close regions"
+          >
+            <svg class="icon"><use href="#i-close" /></svg>
+          </button>
+        </div>
+        <h2>Choose your terrain.</h2>
+        <p class="panel-intro">Seven places. A whole new perspective.</p>
+        <div class="region-list" id="region-list"></div>
+        <div class="source-note">
+          <svg class="icon"><use href="#i-globe" /></svg>
+          <div>
+            Built from Mars elevation data<small
+              >NASA MOLA MEG128 · 8-bit maps</small
+            >
+          </div>
+        </div>
+      </aside>
+      <main id="explorer" aria-label="Interactive terrain explorer">
+        <div
+          id="viewport"
+          role="img"
+          aria-label="Interactive 3D Mars terrain. Drag to orbit, scroll to zoom. Use the analysis panel to sample the center or scan gentle ground."
+        ></div>
+        <div class="viewport-vignette"></div>
+        <div class="mobile-tools">
+          <button id="regions-toggle">
+            <svg class="icon"><use href="#i-globe" /></svg>Regions</button
+          ><button id="analysis-toggle">
+            <svg class="icon"><use href="#i-profile" /></svg>Analysis
+          </button>
+        </div>
+        <div class="scene-heading">
+          <div class="eyebrow">
+            <span class="live-dot"></span
+            ><span id="region-type">IMPACT BASIN</span
+            ><span class="heading-separator">/</span><span>MARS</span>
+          </div>
+          <h1 id="region-title">Jezero Crater<span>.</span></h1>
+          <p id="region-headline">Read the ridges. Trace the basin.</p>
+          <span class="coordinates" id="coordinates"></span>
+        </div>
+        <div
+          class="view-switch"
+          role="group"
+          aria-label="Terrain visualization"
+        >
+          <button class="selected" data-view="surface" aria-pressed="true">
+            Surface</button
+          ><button data-view="elevation" aria-pressed="false">Elevation</button
+          ><button data-view="slope" aria-pressed="false">Slope</button
+          ><button data-view="roughness" aria-pressed="false">Roughness</button>
+        </div>
+        <div class="scene-compass" aria-hidden="true">
+          <span>N</span>
+          <div id="compass-needle"></div>
+          <small id="view-label">PERSPECTIVE</small>
+        </div>
+        <div class="view-actions">
+          <button
+            class="icon-button"
+            id="top-view"
+            title="View from above"
+            aria-label="View from above"
+            aria-pressed="false"
+          >
+            <svg class="icon"><use href="#i-layers" /></svg></button
+          ><button
+            class="icon-button"
+            id="orbit-toggle"
+            title="Start flyover"
+            aria-label="Start flyover"
+            aria-pressed="false"
+          >
+            <svg class="icon"><use href="#i-orbit" /></svg></button
+          ><button
+            class="icon-button"
+            id="camera-reset"
+            title="Reset camera (R)"
+            aria-label="Reset camera"
+          >
+            <svg class="icon"><use href="#i-reset" /></svg>
+          </button>
+        </div>
+        <div class="probe-tooltip" id="probe-tooltip" hidden></div>
+        <div class="scene-bottom">
+          <div class="legend">
+            <div class="legend-title">
+              <span id="legend-title">SURFACE ELEVATION</span
+              ><span id="legend-unit">METERS</span>
+            </div>
+            <div id="legend-gradient"></div>
+            <div class="legend-labels">
+              <span id="legend-min"></span><span id="legend-max"></span>
+            </div>
+          </div>
+          <span class="scene-caption">A little curiosity goes a long way.</span>
+        </div>
+        <div class="scene-toolbar">
+          <div
+            class="tool-picker"
+            role="group"
+            aria-label="Terrain interaction"
+          >
+            <button
+              class="active"
+              id="inspect-tool"
+              aria-pressed="true"
+              title="Inspect a point"
+            >
+              <svg class="icon"><use href="#i-pin" /></svg
+              ><span>Inspect</span></button
+            ><button
+              id="profile-tool"
+              aria-pressed="false"
+              title="Trace a terrain profile"
+            >
+              <svg class="icon"><use href="#i-profile" /></svg
+              ><span>Profile</span>
+            </button>
+          </div>
+          <span class="toolbar-divider"></span
+          ><label class="slider-control" for="relief"
+            ><span>Relief <output id="relief-output">4.0×</output></span
+            ><input
+              id="relief"
+              type="range"
+              min="1"
+              max="16"
+              value="4"
+              step="0.25"
+              aria-label="Vertical exaggeration" /></label
+          ><label class="slider-control light-control" for="sun"
+            ><span
+              ><svg class="icon"><use href="#i-sun" /></svg>Sun angle</span
+            ><input
+              id="sun"
+              type="range"
+              min="0"
+              max="360"
+              value="220"
+              aria-label="Sun direction" /></label
+          ><button
+            id="contours-toggle"
+            class="contour-toggle active"
+            aria-pressed="true"
+            title="Toggle contour lines"
+          >
+            Contours
+          </button>
+        </div>
+        <div class="interaction-hint" id="interaction-hint">
+          Drag to explore <span>·</span> Scroll to zoom <span>·</span> Click to
+          inspect
+        </div>
+        <div id="loading" role="status">
+          <div class="loading-orbit"></div>
+          <h2>Preparing your expedition</h2>
+          <p id="loading-message">Reading the Martian landscape…</p>
+          <button id="retry" hidden>Try again</button>
+        </div>
+      </main>
+      <aside
+        class="inspector panel"
+        id="analysis-panel"
+        aria-label="Terrain analysis"
+      >
+        <div class="panel-heading">
+          <span class="eyebrow">LOOK A LITTLE CLOSER</span
+          ><button
+            class="icon-button drawer-close"
+            data-close="analysis"
+            aria-label="Close analysis"
+          >
+            <svg class="icon"><use href="#i-close" /></svg>
+          </button>
+        </div>
+        <h2>Landscape intelligence.</h2>
+        <p class="panel-intro" id="region-description"></p>
+        <div class="analysis-tabs" role="group" aria-label="Analysis panel">
+          <button data-tab="overview" class="active" aria-pressed="true">
+            Overview</button
+          ><button data-tab="sample" aria-pressed="false">Your sample</button>
+        </div>
+        <section id="overview-section">
+          <div class="metric-feature">
+            <span>Elevation range</span
+            ><strong id="elevation-span">1,505 <small>m</small></strong>
+            <div class="range-endpoints">
+              <span id="min-elevation"></span><span id="max-elevation"></span>
+            </div>
+            <div class="elevation-track"></div>
+          </div>
+          <div class="metric-pair">
+            <div><span>Mean slope</span><strong id="mean-slope"></strong></div>
+            <div>
+              <span>Mapped area</span><strong id="mapped-area"></strong>
+            </div>
+          </div>
+          <div class="section-label">
+            THE SHAPE OF THE LAND<span>ELEVATION</span>
+          </div>
+          <canvas
+            id="histogram"
+            width="500"
+            height="150"
+            aria-label="Elevation distribution histogram"
+            role="img"
+          ></canvas>
+          <div class="chart-axis">
+            <span>Lower ground</span><span>Higher ground</span>
+          </div>
+          <div class="gentle-card">
+            <div class="gentle-heading">
+              <span>Gentler ground</span
+              ><strong id="gentle-percentage"></strong>
+            </div>
+            <p>Share of the mapped area below your slope limit.</p>
+            <label for="slope-limit"
+              ><span>Slope limit</span
+              ><output id="slope-limit-output">5°</output></label
+            ><input
+              id="slope-limit"
+              type="range"
+              min="1"
+              max="25"
+              value="5"
+              step="1"
+            />
+            <div class="gentle-meter"><span id="gentle-fill"></span></div>
+          </div>
+          <button class="primary-button" id="find-gentle">
+            <svg class="icon"><use href="#i-pin" /></svg>Find gentle ground
+          </button>
+        </section>
+        <section id="sample-section" hidden>
+          <div class="sample-caption" id="sample-caption">
+            A point on another world.
+          </div>
+          <div class="sample-location" id="sample-location">
+            Select a point to begin.
+          </div>
+          <div class="metric-feature">
+            <span>Elevation</span><strong id="sample-elevation">—</strong>
+          </div>
+          <div class="metric-pair">
+            <div>
+              <span>Local slope</span><strong id="sample-slope">—</strong>
+            </div>
+            <div>
+              <span>Roughness</span><strong id="sample-roughness">—</strong>
+            </div>
+          </div>
+          <div class="sample-context" id="sample-context">
+            Click the terrain to sample elevation, physical slope, and local
+            surface roughness.
+          </div>
+          <button class="secondary-button" id="sample-center">
+            Sample the map center
+          </button>
+        </section>
+        <section class="profile-section">
+          <div class="section-label">
+            TERRAIN CROSS-SECTION<button id="clear-profile" hidden>
+              Clear
+            </button>
+          </div>
+          <div id="profile-empty">
+            <svg class="icon"><use href="#i-profile" /></svg>
+            <p>What lies between two points?</p>
+            <span
+              >Choose Profile, then click a start and an end on the
+              terrain.</span
+            ><button id="demo-profile">Trace across this region</button>
+          </div>
+          <div id="profile-result" hidden>
+            <canvas
+              id="profile-chart"
+              width="500"
+              height="190"
+              aria-label="Elevation along your selected cross-section"
+              role="img"
+            ></canvas>
+            <div class="profile-stats">
+              <span>Distance<strong id="profile-distance"></strong></span
+              ><span>Elevation change<strong id="profile-gain"></strong></span>
+            </div>
+          </div>
+        </section>
+        <button class="export-button" id="export">
+          <svg class="icon"><use href="#i-download" /></svg>Export field notes
+          <span>JSON</span>
+        </button>
+        <p class="analysis-note">
+          Analysis uses original elevations. Relief changes the view only.
+          <button id="method-open">How it works</button>
+        </p>
+      </aside>
     </div>
-  </div>
-
-  <button id="back-button" type="button" aria-label="Back to sites">&gt;</button>
-
-  <div id="hud">
-    <h1 id="site-name"></h1>
-    <div class="sub" id="site-details"></div>
-  </div>
-
-  <div id="legend">
-    ELEVATION RANGE<br>
-    <span id="elevation-range"></span>
-  </div>
-
-  <div id="controls">
-    LEFT DRAG  ·  orbit<br>
-    RIGHT DRAG  ·  pan<br>
-    SCROLL  ·  zoom<br>
-    R  ·  reset camera
-  </div>
-
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/"
-    }
-  }
-  </script>
-
-  <script type="module">
-    import * as THREE from 'three';
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-    const JEZERO = {
-      name: 'Jezero Crater',
-      planet: 'Mars',
-      source: 'NASA MOLA MEG128',
-      heightmap: 'jezero_heightmap.png',
-      location: { latitude: 18.4, longitude: 77.6 },
-      elevation: { min: -2907, max: -1402, unit: 'meters' }
-    };
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x080606);
-    scene.add(new THREE.AmbientLight(0xffeee0, 0.85));
-
-    const sun = new THREE.DirectionalLight(0xfff5e8, 3.5);
-    sun.position.set(-4, 3, 2);
-    scene.add(sun);
-
-    const camera = new THREE.PerspectiveCamera(
-      45, window.innerWidth / window.innerHeight, 0.01, 1000
-    );
-    const INIT_CAM = new THREE.Vector3(0, 1.4, 2.0);
-    camera.position.copy(INIT_CAM);
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.07;
-    controls.minDistance = 0.3;
-    controls.maxDistance = 8;
-    controls.target.set(0, 0, 0);
-
-    function loadHeightData(src) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          resolve({ pixels: data.data, w: canvas.width, h: canvas.height });
-        };
-        img.onerror = reject;
-        img.src = src;
-      });
-    }
-
-    let activeTerrain = null;
-    let animationStarted = false;
-
-    async function buildTerrain(site) {
-      const heightmapSrc = `data/${site.heightmap}`;
-
-      const { pixels, w, h } = await loadHeightData(heightmapSrc);
-      const segX = w - 1;
-      const segZ = h - 1;
-      const aspect = w / h;
-      const sizeX = aspect >= 1 ? 2 : 2 * aspect;
-      const sizeZ = aspect >= 1 ? 2 / aspect : 2;
-      const heightScale = 0.5;
-
-      let geometry = new THREE.PlaneGeometry(sizeX, sizeZ, segX, segZ);
-      geometry.rotateX(-Math.PI / 2);
-
-      let pos = geometry.attributes.position;
-      const vertCount = pos.count;
-      const colors = new Float32Array(vertCount * 3);
-      const elevations = new Float32Array(vertCount);
-
-      // V4 COLOR PALETTE
-      const low = new THREE.Color(0x654239);
-      const mid = new THREE.Color(0xc18b69);
-      const high = new THREE.Color(0xe1b18c);
-
-      for (let i = 0; i < vertCount; i++) {
-        const col = i % w;
-        const row = Math.floor(i / w);
-        const px = (row * w + col) * 4;
-        const r = pixels[px];
-
-        const normElev = r / 255;
-        const worldY = normElev * heightScale;
-        pos.setY(i, worldY);
-        elevations[i] = normElev;
-
-        const soil = normElev < 0.52
-          ? low.clone().lerp(mid, normElev / 0.52)
-          : mid.clone().lerp(high, (normElev - 0.52) / 0.48);
-
-        colors[i * 3] = soil.r;
-        colors[i * 3 + 1] = soil.g;
-        colors[i * 3 + 2] = soil.b;
-      }
-
-      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-      pos.needsUpdate = true;
-      geometry.computeVertexNormals();
-
-      const rock = new THREE.Color(0x855747);
-      const soilColor = new THREE.Color();
-      const orangeDust = new THREE.Color(0xb66d4e);
-      const ochreDust = new THREE.Color(0xd49a70);
-
-      for (let i = 0; i < vertCount; i++) {
-        const x = i % w;
-        const z = Math.floor(i / w);
-
-        const left = elevations[z * w + Math.max(0, x - 1)];
-        const right = elevations[z * w + Math.min(w - 1, x + 1)];
-        const up = elevations[Math.max(0, z - 1) * w + x];
-        const down = elevations[Math.min(h - 1, z + 1) * w + x];
-
-        const slope = Math.hypot(
-          (right - left) * w / 2,
-          (down - up) * h / 2
-        );
-
-        const cliff = THREE.MathUtils.smoothstep(slope, 0.22, 1.25) * 0.84;
-        const e = elevations[i];
-
-        soilColor.copy(e < 0.52 ? low : mid);
-
-        if (e < 0.52) {
-          soilColor.lerp(mid, e / 0.52);
-        } else {
-          soilColor.lerp(high, (e - 0.52) / 0.48);
-        }
-
-        soilColor.lerp(rock, cliff);
-
-        // Bright orange iron-oxide dust patches
-        const warmField =
-          0.5
-          + 0.25 * Math.sin(x * 0.105 + Math.sin(z * 0.073) * 2.3)
-          + 0.25 * Math.sin(z * 0.087 - x * 0.051);
-
-        const patch = THREE.MathUtils.smoothstep(warmField, 0.43, 0.72);
-        const flatness = 1 - THREE.MathUtils.smoothstep(slope, 0.25, 1.15);
-
-        const orangeAmount =
-          patch * flatness * (0.48 + 0.12 * Math.sin(e * 7.0));
-
-        soilColor.lerp(orangeDust, Math.max(0, orangeAmount));
-
-        const ochreField =
-          0.5 + 0.5 * Math.sin(
-            x * 0.061 - z * 0.083 + Math.sin(x * 0.037)
-          );
-
-        soilColor.lerp(ochreDust, 0.22 * ochreField * flatness);
-
-        const variation =
-          0.88 + 0.12
-          * Math.sin(x * 1.71 + z * 0.37)
-          * Math.sin(z * 2.13 - x * 0.19);
-
-        colors[i * 3] = soilColor.r * variation;
-        colors[i * 3 + 1] = soilColor.g * variation;
-        colors[i * 3 + 2] = soilColor.b * variation;
-      }
-
-      geometry.attributes.color.needsUpdate = true;
-
-      // Optional physical micro-relief: add actual geometry between heightmap
-      // samples, then gently displace it. Rocks use this same final mesh.
-      const ENABLE_SURFACE_RELIEF = true;
-      const RELIEF_STRENGTH = 0.0045; // subtle fine surface relief
-      const JAGGED_RIDGE_STRENGTH = 0.014; // try 0.008 subtle, 0.022 dramatic
-      const JAGGED_SLOPE_START = 0.32; // steepness threshold for extra ruggedness
-      if (ENABLE_SURFACE_RELIEF) {
-        const oldPosition = geometry.getAttribute('position');
-        const oldColor = geometry.getAttribute('color');
-        const oldUV = geometry.getAttribute('uv');
-        const oldIndices = geometry.index.array;
-        const newPositions = Array.from(oldPosition.array);
-        const newColors = Array.from(oldColor.array);
-        const newUVs = Array.from(oldUV.array);
-        const newIndices = [];
-        const edgeMidpoints = new Map();
-
-        function midpoint(a, b) {
-          const key = Math.min(a, b) + ':' + Math.max(a, b);
-          if (edgeMidpoints.has(key)) return edgeMidpoints.get(key);
-          const index = newPositions.length / 3;
-          for (let k = 0; k < 3; k++) {
-            newPositions.push((oldPosition.getComponent(a, k) + oldPosition.getComponent(b, k)) * 0.5);
-            newColors.push((oldColor.getComponent(a, k) + oldColor.getComponent(b, k)) * 0.5);
-          }
-          for (let k = 0; k < 2; k++) {
-            newUVs.push((oldUV.getComponent(a, k) + oldUV.getComponent(b, k)) * 0.5);
-          }
-          edgeMidpoints.set(key, index);
-          return index;
-        }
-
-        for (let t = 0; t < oldIndices.length; t += 3) {
-          const a = oldIndices[t], b = oldIndices[t + 1], c = oldIndices[t + 2];
-          const ab = midpoint(a, b), bc = midpoint(b, c), ca = midpoint(c, a);
-          newIndices.push(a, ab, ca, ab, b, bc, ca, bc, c, ab, bc, ca);
-        }
-
-        // Smooth deterministic value noise; neighboring vertices share the
-        // same world-space pattern, so there are no random vertex spikes.
-        function hash(ix, iz) {
-          const v = Math.sin(ix * 127.1 + iz * 311.7) * 43758.5453;
-          return v - Math.floor(v);
-        }
-        function reliefNoise(x, z, frequency) {
-          const fx = x * frequency, fz = z * frequency;
-          const ix = Math.floor(fx), iz = Math.floor(fz);
-          let tx = fx - ix, tz = fz - iz;
-          tx = tx * tx * (3 - 2 * tx);
-          tz = tz * tz * (3 - 2 * tz);
-          const a = hash(ix, iz), b = hash(ix + 1, iz);
-          const c = hash(ix, iz + 1), d = hash(ix + 1, iz + 1);
-          return THREE.MathUtils.lerp(
-            THREE.MathUtils.lerp(a, b, tx),
-            THREE.MathUtils.lerp(c, d, tx), tz
-          ) * 2 - 1;
-        }
-
-        // Sample the original heightmap gradient at any X/Z position.
-        // Jagged detail is concentrated on steep terrain, not the flat floor.
-        function originalElevation(ix, iz) {
-          const col = THREE.MathUtils.clamp(ix, 0, w - 1);
-          const row = THREE.MathUtils.clamp(iz, 0, h - 1);
-          return elevations[row * w + col];
-        }
-        function terrainSteepness(x, z) {
-          const gx = THREE.MathUtils.clamp((x / sizeX + 0.5) * (w - 1), 0, w - 1);
-          const gz = THREE.MathUtils.clamp((z / sizeZ + 0.5) * (h - 1), 0, h - 1);
-          const ix = Math.round(gx), iz = Math.round(gz);
-          const dx = (originalElevation(ix + 1, iz) - originalElevation(ix - 1, iz)) * heightScale / (2 * sizeX / (w - 1));
-          const dz = (originalElevation(ix, iz + 1) - originalElevation(ix, iz - 1)) * heightScale / (2 * sizeZ / (h - 1));
-          return Math.hypot(dx, dz);
-        }
-
-        for (let i = 0; i < newPositions.length; i += 3) {
-          const x = newPositions[i], z = newPositions[i + 2];
-          const edgeDistance = Math.min(
-            sizeX * 0.5 - Math.abs(x), sizeZ * 0.5 - Math.abs(z)
-          );
-          const edgeFade = THREE.MathUtils.smoothstep(edgeDistance, 0, 0.07);
-          const detail =
-            0.65 * reliefNoise(x, z, 32) +
-            0.25 * reliefNoise(x, z, 90) +
-            0.10 * reliefNoise(x, z, 175);
-          // Sharper broken ridges, only where the heightmap is steep.
-          // Ridged noise creates crests and small ledges instead of smooth hills.
-          const slope = terrainSteepness(x, z);
-          const cliffMask = THREE.MathUtils.smoothstep(
-            slope, JAGGED_SLOPE_START, JAGGED_SLOPE_START + 0.65
-          );
-          const ridge1 = 1 - Math.abs(reliefNoise(x + 12.7, z - 4.3, 21));
-          const ridge2 = 1 - Math.abs(reliefNoise(x - 6.2, z + 9.1, 53));
-          const brokenRidges = (Math.pow(ridge1, 3) * 0.75 + Math.pow(ridge2, 4) * 0.25) - 0.24;
-          newPositions[i + 1] += edgeFade * (
-            detail * RELIEF_STRENGTH +
-            brokenRidges * JAGGED_RIDGE_STRENGTH * cliffMask
-          );
-        }
-
-        const detailedGeometry = new THREE.BufferGeometry();
-        detailedGeometry.setAttribute('position', new THREE.Float32BufferAttribute(newPositions, 3));
-        detailedGeometry.setAttribute('color', new THREE.Float32BufferAttribute(newColors, 3));
-        detailedGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(newUVs, 2));
-        detailedGeometry.setIndex(newIndices);
-        detailedGeometry.computeVertexNormals();
-        geometry.dispose();
-        geometry = detailedGeometry;
-      }
-
-      // Procedural rocky dust texture
-      const textureCanvas = document.createElement('canvas');
-      textureCanvas.width = textureCanvas.height = 512;
-      const texCtx = textureCanvas.getContext('2d');
-      const tex = texCtx.createImageData(512, 512);
-
-      let seed = 1234567;
-      const rand = () =>
-        ((seed = (1664525 * seed + 1013904223) >>> 0) / 4294967296);
-
-      // Periodic value noise: opposing edges wrap to the same values.
-      function tileableNoise(cells) {
-        const grid = Float32Array.from({ length: cells * cells }, rand);
-
-        return (u, v) => {
-          const fx = u * cells;
-          const fy = v * cells;
-          const ix = Math.floor(fx);
-          const iy = Math.floor(fy);
-          const x0 = ((ix % cells) + cells) % cells;
-          const y0 = ((iy % cells) + cells) % cells;
-          const x1 = (x0 + 1) % cells;
-          const y1 = (y0 + 1) % cells;
-
-          let tx = fx - ix;
-          let ty = fy - iy;
-          tx = tx * tx * (3 - 2 * tx);
-          ty = ty * ty * (3 - 2 * ty);
-
-          const a = grid[y0 * cells + x0];
-          const b = grid[y0 * cells + x1];
-          const c = grid[y1 * cells + x0];
-          const d = grid[y1 * cells + x1];
-
-          return (a * (1 - tx) + b * tx) * (1 - ty)
-            + (c * (1 - tx) + d * tx) * ty;
-        };
-      }
-
-      const broad = tileableNoise(8);
-      const medium = tileableNoise(32);
-      const fine = tileableNoise(96);
-      const micro = tileableNoise(192);
-
-      for (let y = 0; y < 512; y++) {
-        for (let x = 0; x < 512; x++) {
-          const i = (y * 512 + x) * 4;
-          const u = x / 512;
-          const v = y / 512;
-
-          const detail =
-            75 * (broad(u, v) - 0.5) +
-            55 * (medium(u, v) - 0.5) +
-            35 * (fine(u, v) - 0.5) +
-            18 * (micro(u, v) - 0.5);
-
-          // Fine grain also wraps: a deterministic periodic pixel pattern.
-          const grain = 18 * (rand() - 0.5);
-          const brightness = Math.max(
-            110, Math.min(255, Math.round(210 + detail + grain))
-          );
-
-          tex.data[i] = brightness;
-          tex.data[i + 1] = Math.round(brightness * 0.96);
-          tex.data[i + 2] = Math.round(brightness * 0.90);
-          tex.data[i + 3] = 255;
-        }
-      }
-
-      texCtx.putImageData(tex, 0, 0);
-
-      const dustMap = new THREE.CanvasTexture(textureCanvas);
-
-      dustMap.wrapS = THREE.RepeatWrapping;
-      dustMap.wrapT = THREE.RepeatWrapping;
-      dustMap.repeat.set(6, 6);
-      dustMap.colorSpace = THREE.SRGBColorSpace;
-
-      const solidMat = new THREE.MeshStandardMaterial({
-        vertexColors: true,
-        map: dustMap,
-        roughness: 1,
-        metalness: 0,
-        side: THREE.DoubleSide
-      });
-
-      // Fractured bedrock: connected polygonal plates separated by narrow cracks.
-      // Detail is procedural (no additional micro-rock meshes).
-      const ROCK_PATCH_COVERAGE = 0.55;
-      const ROCK_PATCH_STRENGTH = 0.78;
-      const FRACTURE_DENSITY = 270.0; // higher = smaller connected stone plates
-
-      const MICRO_STONE_DENSITY = 340.0; // small simulated stone chips, no extra meshes
-      const MICRO_STONE_STRENGTH = 0.88; // subtle contrast on the rocky patches
-
-      solidMat.onBeforeCompile = (shader) => {
-        shader.vertexShader = shader.vertexShader.replace(
-          '#include <common>',
-          `#include <common>
-           varying vec2 vGravelXZ;
-           varying float vGravelFlatness;`
-        );
-        shader.vertexShader = shader.vertexShader.replace(
-          '#include <begin_vertex>',
-          `#include <begin_vertex>
-           vGravelXZ = position.xz;
-           vGravelFlatness = abs(normal.y);`
-        );
-        shader.fragmentShader = shader.fragmentShader.replace(
-          '#include <common>',
-          `#include <common>
-           varying vec2 vGravelXZ;
-           varying float vGravelFlatness;
-
-           float gravelHash(vec2 p) {
-             return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-           }
-           vec2 gravelHash2(vec2 p) {
-             return vec2(gravelHash(p + 1.7), gravelHash(p + 49.3));
-           }
-           float gravelNoise(vec2 p) {
-             vec2 i = floor(p), f = fract(p);
-             f = f * f * (3.0 - 2.0 * f);
-             return mix(
-               mix(gravelHash(i), gravelHash(i + vec2(1.0, 0.0)), f.x),
-               mix(gravelHash(i + vec2(0.0, 1.0)), gravelHash(i + vec2(1.0, 1.0)), f.x),
-               f.y
-             );
-           }
-           // Voronoi edge distance: adjacent cells share the same boundary,
-           // so stone plates fit together rather than forming isolated circles.
-           vec3 fracturedStone(vec2 uv) {
-             vec2 cell = floor(uv);
-             vec2 f = fract(uv);
-             float nearestD = 100.0;
-             vec2 nearestVector = vec2(0.0);
-             vec2 nearestCell = vec2(0.0);
-             for (int y = -1; y <= 1; y++) {
-               for (int x = -1; x <= 1; x++) {
-                 vec2 offset = vec2(float(x), float(y));
-                 vec2 id = cell + offset;
-                 vec2 feature = offset + 0.20 + 0.60 * gravelHash2(id);
-                 vec2 r = feature - f;
-                 float d = dot(r, r);
-                 if (d < nearestD) {
-                   nearestD = d;
-                   nearestVector = r;
-                   nearestCell = id;
-                 }
-               }
-             }
-             float edge = 100.0;
-             for (int y = -1; y <= 1; y++) {
-               for (int x = -1; x <= 1; x++) {
-                 vec2 offset = vec2(float(x), float(y));
-                 vec2 id = cell + offset;
-                 vec2 feature = offset + 0.20 + 0.60 * gravelHash2(id);
-                 vec2 r = feature - f;
-                 vec2 difference = r - nearestVector;
-                 float dist = length(difference);
-                 if (dist > 0.0001) {
-                   edge = min(edge, dot(0.5 * (r + nearestVector), difference / dist));
-                 }
-               }
-             }
-             float tint = gravelHash(nearestCell + 19.0);
-             return vec3(edge, tint, gravelHash(nearestCell + 67.0));
-           }
-          `
-        );
-        shader.fragmentShader = shader.fragmentShader.replace(
-          '#include <color_fragment>',
-          `#include <color_fragment>
-           float patchNoise = 0.58 * gravelNoise(vGravelXZ * 4.7)
-                            + 0.42 * gravelNoise(vGravelXZ * 11.3 + 7.1);
-           float patchMask = smoothstep(0.43, 0.64, patchNoise + (${ROCK_PATCH_COVERAGE.toFixed(2)} - 0.5) * 0.26);
-           float flatMask = smoothstep(0.70, 0.94, vGravelFlatness);
-           float coverage = patchMask * flatMask * ${ROCK_PATCH_STRENGTH.toFixed(2)};
-
-           vec2 rockyUV = vGravelXZ * ${FRACTURE_DENSITY.toFixed(1)};
-           // Warp the grid slightly to make fractures less uniform.
-           rockyUV += 0.15 * vec2(gravelNoise(rockyUV * 0.23 + 7.2) - 0.5,
-                                   gravelNoise(rockyUV * 0.23 + 31.4) - 0.5);
-           float pixelWidth = max(length(dFdx(rockyUV)), length(dFdy(rockyUV)));
-           float detailFade = 1.0 - smoothstep(0.8, 2.0, pixelWidth);
-           vec3 fracture = fracturedStone(rockyUV);
-           float crackWidth = 0.015 + 0.007 * fracture.z;
-           float aa = max(fwidth(fracture.x) * 1.2, 0.006);
-           float stoneInterior = smoothstep(crackWidth - aa, crackWidth + aa, fracture.x);
-           float edgeHighlight = smoothstep(crackWidth, crackWidth + 0.07, fracture.x)
-                               - smoothstep(crackWidth + 0.07, crackWidth + 0.16, fracture.x);
-           float stoneVariation = mix(0.82, 1.13, fracture.y);
-           vec3 stoneTint = vec3(0.96, 0.92, 0.88) * stoneVariation;
-           stoneTint += vec3(0.08, 0.065, 0.05) * edgeHighlight;
-           vec3 crackTint = vec3(0.52, 0.47, 0.44);
-           vec3 rockyTint = mix(crackTint, stoneTint, stoneInterior);
-           float grit = gravelHash(floor(rockyUV * 4.0));
-           rockyTint *= 0.96 + 0.08 * grit;
-           diffuseColor.rgb *= mix(vec3(1.0), rockyTint, coverage * detailFade);
-
-           // Tiny angular rock chips, rendered as surface shading only.
-           // Cell jitter and varying sizes avoid a regular dotted pattern.
-           vec2 chipUV = vGravelXZ * ${MICRO_STONE_DENSITY.toFixed(1)};
-           vec2 chipCell = floor(chipUV);
-           vec2 chipLocal = fract(chipUV);
-           vec2 chipCenter = 0.22 + 0.56 * gravelHash2(chipCell + 103.0);
-           vec2 chipOffset = chipLocal - chipCenter;
-           float chipAngle = gravelHash(chipCell + 71.0) * 6.2831853;
-           float ca = cos(chipAngle), sa = sin(chipAngle);
-           vec2 rotated = vec2(ca * chipOffset.x - sa * chipOffset.y,
-                               sa * chipOffset.x + ca * chipOffset.y);
-           float chipSize = mix(0.20, 0.35, gravelHash(chipCell + 32.0));
-           float chipShape = max(abs(rotated.x) * 0.92, abs(rotated.y) * 1.27);
-           float chipAA = max(fwidth(chipShape), 0.008);
-           float chip = 1.0 - smoothstep(chipSize - chipAA, chipSize + chipAA, chipShape);
-           float chipPresence = step(0.16, gravelHash(chipCell + 9.0));
-           float chipLight = gravelHash(chipCell + 17.0);
-           float chipShade = mix(0.72, 1.28, chipLight);
-           float chipRim = 1.0 - smoothstep(chipSize * 0.60, chipSize, chipShape);
-           vec3 chipTint = mix(vec3(0.70, 0.72, 0.74), vec3(1.26, 1.16, 1.05), chipLight);
-           chipTint *= chipShade + 0.11 * chipRim;
-           float chipPixelWidth = max(length(dFdx(chipUV)), length(dFdy(chipUV)));
-           float chipFade = 1.0 - smoothstep(0.95, 2.3, chipPixelWidth);
-           float chipMask = chip * chipPresence * chipFade * coverage
-                          * ${MICRO_STONE_STRENGTH.toFixed(2)};
-           diffuseColor.rgb *= mix(vec3(1.0), chipTint, chipMask);
-          `
-        );
-      };
-
-      const solid = new THREE.Mesh(geometry, solidMat);
-      const group = new THREE.Group();
-      group.add(solid);
-
-      // Place stones directly on the triangles of the terrain mesh.
-      pos = geometry.attributes.position;
-      // This avoids UV orientation errors and mismatched height interpolation.
-      let rockState = 24681357;
-      const rockRandom = () =>
-        ((rockState = (1664525 * rockState + 1013904223) >>> 0) / 4294967296);
-
-      const rockGeometry = new THREE.IcosahedronGeometry(1, 0);
-      const rockMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        roughness: 1,
-        metalness: 0,
-        flatShading: true
-      });
-      const rockDummy = new THREE.Object3D();
-      const rockTint = new THREE.Color();
-      const grayStone = new THREE.Color(0x918780);
-      const lightStone = new THREE.Color(0xc5a58b);
-      const triangleIndices = geometry.index.array;
-      const triangleCount = triangleIndices.length / 3;
-      const vertexColor = geometry.getAttribute('color');
-
-      // Favor flatter triangles: near-horizontal ground gets many stones,
-      // while steep crater walls get very few. Use the actual mesh triangles.
-      const edgeA = new THREE.Vector3();
-      const edgeB = new THREE.Vector3();
-      const faceNormal = new THREE.Vector3();
-      function randomTerrainPoint(preferVeryFlat = false) {
-        let triangle = 0;
-        for (let attempt = 0; attempt < 120; attempt++) {
-          triangle = Math.floor(rockRandom() * triangleCount) * 3;
-          const a = triangleIndices[triangle];
-          const b = triangleIndices[triangle + 1];
-          const c = triangleIndices[triangle + 2];
-          edgeA.set(pos.getX(b) - pos.getX(a), pos.getY(b) - pos.getY(a), pos.getZ(b) - pos.getZ(a));
-          edgeB.set(pos.getX(c) - pos.getX(a), pos.getY(c) - pos.getY(a), pos.getZ(c) - pos.getZ(a));
-          faceNormal.crossVectors(edgeA, edgeB).normalize();
-          const flatness = Math.abs(faceNormal.y); // 1 = flat, 0 = vertical
-          const flatPreference = THREE.MathUtils.smoothstep(flatness, 0.70, 0.98);
-          const probability = preferVeryFlat
-            ? 0.002 + 0.998 * Math.pow(flatPreference, 4)
-            : 0.025 + 0.975 * flatPreference * flatPreference;
-          if (rockRandom() < probability) break;
-        }
-        const ia = triangleIndices[triangle];
-        const ib = triangleIndices[triangle + 1];
-        const ic = triangleIndices[triangle + 2];
-        let u = rockRandom();
-        let v = rockRandom();
-        if (u + v > 1) {
-          u = 1 - u;
-          v = 1 - v;
-        }
-        const wa = 1 - u - v;
-        const wb = u;
-        const wc = v;
-        const x = wa * pos.getX(ia) + wb * pos.getX(ib) + wc * pos.getX(ic);
-        const y = wa * pos.getY(ia) + wb * pos.getY(ib) + wc * pos.getY(ic);
-        const z = wa * pos.getZ(ia) + wb * pos.getZ(ib) + wc * pos.getZ(ic);
-        rockTint.setRGB(
-          wa * vertexColor.getX(ia) + wb * vertexColor.getX(ib) + wc * vertexColor.getX(ic),
-          wa * vertexColor.getY(ia) + wb * vertexColor.getY(ib) + wc * vertexColor.getY(ic),
-          wa * vertexColor.getZ(ia) + wb * vertexColor.getZ(ib) + wc * vertexColor.getZ(ic)
-        );
-        return { x, y, z };
-      }
-
-      // Dense micro-gravel on flat ground. One InstancedMesh keeps draw calls low.
-      // Toggle this to compare the appearance with the previous version.
-      const ENABLE_MICRO_GRAVEL = false;
-      const MICRO_GRAVEL_COUNT = 28000;
-
-      // [number of rocks, minimum radius, maximum radius, maximum height multiplier]
-      const rockGroups = [
-        ...(ENABLE_MICRO_GRAVEL ? [[MICRO_GRAVEL_COUNT, 0.00022, 0.00065, 0.34]] : []),
-        [5000, 0.0008, 0.0021, 0.52],
-        [420, 0.0022, 0.0046, 0.65],
-        [24, 0.0055, 0.0090, 0.78]
-      ];
-
-      for (const [count, minRadius, maxRadius, maxHeight] of rockGroups) {
-        const isMicroGravel = count === MICRO_GRAVEL_COUNT && ENABLE_MICRO_GRAVEL;
-        const rocks = new THREE.InstancedMesh(rockGeometry, rockMaterial, count);
-        for (let i = 0; i < count; i++) {
-          const point = randomTerrainPoint(isMicroGravel);
-          const radius = THREE.MathUtils.lerp(minRadius, maxRadius, rockRandom());
-          const heightRatio = isMicroGravel
-            ? 0.15 + rockRandom() * 0.18
-            : 0.22 + rockRandom() * (maxHeight - 0.22);
-          const rockHeight = radius * heightRatio;
-
-          // The rock's center sits just below the actual triangle surface.
-          rockDummy.position.set(
-            point.x,
-            point.y - rockHeight * (isMicroGravel ? 0.78 : 0.52),
-            point.z
-          );
-          rockDummy.rotation.set(
-            (rockRandom() - 0.5) * 0.25,
-            rockRandom() * Math.PI * 2,
-            (rockRandom() - 0.5) * 0.25
-          );
-          rockDummy.scale.set(radius, rockHeight, radius * (0.75 + rockRandom() * 0.55));
-          rockDummy.updateMatrix();
-          rocks.setMatrixAt(i, rockDummy.matrix);
-          // Most stones match the terrain; a few are muted gray or lighter tan.
-          // Keep the contrast restrained so the rocks blend into Mars.
-          const stoneType = rockRandom();
-          if (stoneType < (isMicroGravel ? 0.08 : 0.13)) {
-            rockTint.lerp(grayStone, 0.45 + rockRandom() * 0.20);
-          } else if (stoneType < (isMicroGravel ? 0.20 : 0.34)) {
-            rockTint.lerp(lightStone, 0.25 + rockRandom() * 0.20);
-          }
-          rockTint.multiplyScalar(isMicroGravel
-            ? 0.89 + rockRandom() * 0.13
-            : 0.80 + rockRandom() * 0.18);
-          rocks.setColorAt(i, rockTint);
-        }
-        rocks.instanceMatrix.needsUpdate = true;
-        if (rocks.instanceColor) rocks.instanceColor.needsUpdate = true;
-        rocks.frustumCulled = false;
-        group.add(rocks);
-      }
-
-      const SHOW_WIREFRAME = false;
-
-      if (SHOW_WIREFRAME) {
-        const wire = new THREE.Mesh(
-          geometry,
-          new THREE.MeshBasicMaterial({
-            color: 0x24140f,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.18
-          })
-        );
-        group.add(wire);
-      }
-
-      group.position.y = -heightScale / 2;
-      if (activeTerrain) {
-        scene.remove(activeTerrain);
-        activeTerrain.traverse(object => {
-          if (object.isMesh) {
-            object.geometry.dispose();
-            object.material.dispose();
-          }
-        });
-      }
-      activeTerrain = group;
-      scene.add(group);
-    }
-
-    function formatCoordinate(value, positiveDirection, negativeDirection) {
-      const direction = value < 0 ? negativeDirection : positiveDirection;
-      return `${Math.abs(value)}°${direction}`;
-    }
-
-    function updateSiteDetails(site) {
-      const min = site.elevation.min;
-      const max = site.elevation.max;
-
-      document.title = `Mars — ${site.name} Heightmap`;
-      document.getElementById('site-name').textContent = site.name;
-
-      document.getElementById('site-details').textContent =
-        `Mars · ${formatCoordinate(site.location.latitude, 'N', 'S')} ` +
-        `${formatCoordinate(site.location.longitude, 'E', 'W')} · ${site.source}`;
-
-      document.getElementById('elevation-range').textContent =
-        `MIN  ${min} m\nMAX  ${max} m\nΔALT   ${max - min} m`;
-    }
-
-    function createSiteOption(site) {
-      const button = document.createElement('button');
-      button.className = 'site-option';
-      button.type = 'button';
-
-      const name = document.createElement('strong');
-      name.textContent = site.name;
-
-      const elevation = document.createElement('span');
-      elevation.textContent =
-        `Elevation: ${site.elevation.min} to ${site.elevation.max} m`;
-
-      const location = document.createElement('span');
-      location.textContent =
-        `${formatCoordinate(site.location.latitude, 'N', 'S')} · ` +
-        `${formatCoordinate(site.location.longitude, 'E', 'W')}`;
-
-      button.append(name, elevation, location);
-      button.addEventListener('click', () => selectSite(site));
-
-      return button;
-    }
-
-    async function selectSite(site) {
-      const loading = document.getElementById('loading');
-      const loadingMessage = loading.querySelector('p');
-
-      loadingMessage.textContent =
-        `Parsing ${site.name} elevation data…`;
-
-      loading.classList.remove('hidden');
-
-      try {
-        await buildTerrain(site);
-        updateSiteDetails(site);
-        document.getElementById('site-picker').classList.remove('visible');
-        document.getElementById('back-button').style.display = 'block';
-        if (!animationStarted) {
-          animationStarted = true;
-          animate();
-        }
-        loading.classList.add('hidden');
-      } catch (err) {
-        console.error(`Failed to build terrain for ${site.name}:`, err);
-        loadingMessage.textContent =
-          `Error loading ${site.name}. Please reload and try again.`;
-      }
-    }
-
-    const backButton = document.getElementById('back-button');
-    backButton.addEventListener('click', () => {
-      document.getElementById('site-picker').classList.add('visible');
-      backButton.style.display = 'none';
-    });
-
-    window.addEventListener('keydown', e => {
-      if (e.key === 'r' || e.key === 'R') {
-        camera.position.copy(INIT_CAM);
-        controls.target.set(0, 0, 0);
-        controls.update();
-      }
-    });
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-
-    const loading = document.getElementById('loading');
-
-    Promise.all([
-  fetch('data/sites.json').then(response => {
-    if (!response.ok) {
-      throw new Error(
-        `Could not load site metadata (${response.status})`
-      );
-    }
-    return response.json();
-  })
-]).then(([data]) => {
-
-  const sites = data.sites;
-
-  const siteList = document.getElementById('site-list');
-
-  sites.forEach(site => {
-    siteList.appendChild(createSiteOption(site));
-  });
-
-  loading.classList.add('hidden');
-  document.getElementById('site-picker').classList.add('visible');
-
-}).catch(err => {
-  console.error('Failed to load Mars site metadata:', err);
-
-  loading.querySelector('p').textContent =
-    'Error loading Mars sites. Please reload the page.';
-});
-  </script>
-</body>
+    <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <dialog id="guide-dialog">
+      <button
+        class="icon-button modal-close"
+        id="guide-close"
+        aria-label="Close field guide"
+      >
+        <svg class="icon"><use href="#i-close" /></svg>
+      </button>
+      <div class="eyebrow">A FIELD GUIDE TO CURIOSITY</div>
+      <h2>There's more beneath<br />the surface.</h2>
+      <p class="guide-lead">
+        Seven landscapes, four ways of seeing them. Start with a place. Follow a
+        question.
+      </p>
+      <div class="guide-grid">
+        <article>
+          <svg class="icon"><use href="#i-globe" /></svg>
+          <h3>Explore a region</h3>
+          <p>
+            Drag to orbit, right-drag to pan, and scroll or pinch to zoom. Try
+            the overhead view or start a flyover.
+          </p>
+        </article>
+        <article>
+          <svg class="icon"><use href="#i-layers" /></svg>
+          <h3>Change your perspective</h3>
+          <p>
+            Surface shows the landscape. Elevation reveals highs and lows. Slope
+            and roughness show the shape of the ground.
+          </p>
+        </article>
+        <article>
+          <svg class="icon"><use href="#i-pin" /></svg>
+          <h3>Ask the terrain</h3>
+          <p>
+            Click a point to inspect it. Find gentle ground scans a local
+            neighborhood for low slope and low roughness.
+          </p>
+        </article>
+        <article>
+          <svg class="icon"><use href="#i-profile" /></svg>
+          <h3>Trace a story</h3>
+          <p>
+            Choose Profile and click two points. The cross-section shows the
+            sampled elevation between them. Export your findings as field notes.
+          </p>
+        </article>
+      </div>
+      <details id="method-details">
+        <summary>Data & analysis methods</summary>
+        <p>
+          Heightmaps and geographic bounds are supplied by this project and
+          labeled NASA MOLA MEG128. Each 141 × 129 grayscale image is decoded
+          using its per-region elevation range. Eight-bit encoding quantizes
+          elevation into 256 levels; subtle features and fine slopes cannot be
+          resolved.
+        </p>
+        <p>
+          Slope is the angle of the elevation gradient using latitude-adjusted
+          spacing on a spherical Mars (radius 3,389.5 km). Roughness is the RMS
+          elevation residual from a fitted plane in a 3 × 3 neighborhood, in
+          meters. Area fractions use latitude and edge weighting. Profiles use
+          bilinear sampling along a straight line in map coordinates, with
+          geographic segment distances.
+        </p>
+        <p>
+          The 3D mesh uses bilinear interpolation. Contours and surface colors
+          are visualization aids. The slope layer is scaled to 15° and roughness
+          to each region's 95th percentile; values beyond those limits use the
+          highest color. Vertical exaggeration changes geometry only. Gentle
+          ground is an exploratory ranking, not a landing or rover safety
+          assessment.
+        </p>
+      </details>
+      <button class="primary-button guide-start" id="guide-start">
+        Let's explore
+      </button>
+    </dialog>
+    <script type="module" src="js/app.mjs"></script>
+  </body>
 </html>

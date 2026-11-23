@@ -4,16 +4,216 @@
       "name": "Jezero Crater",
       "planet": "Mars",
       "source": "NASA MOLA MEG128",
-      "heightmap": "jezero_heightmap.png",
+      "heightmap": "data/jezero_heightmap.png",
       "location": {
         "latitude": 18.4,
         "longitude": 77.6
+      },
+      "bounds": {
+        "west": 77.0,
+        "east": 78.1,
+        "south": 17.9,
+        "north": 18.9
       },
       "elevation": {
         "min": -2907,
         "max": -1402,
         "unit": "meters"
-      }
+      },
+      "image": {
+        "width": 141,
+        "height": 129,
+        "bitDepth": 8
+      },
+      "type": "IMPACT BASIN",
+      "headline": "Read the ridges. Trace the basin.",
+      "description": "An intricate crater landscape. Follow the rim, sample the floor, and see how the terrain changes beneath your cursor."
+    },
+    {
+      "name": "Olympus Mons",
+      "planet": "Mars",
+      "source": "NASA MOLA MEG128",
+      "heightmap": "output/olympus_mons_heightmap.png",
+      "location": {
+        "latitude": 18.4,
+        "longitude": 226.0
+      },
+      "bounds": {
+        "west": 220.7,
+        "east": 231.0,
+        "south": 13.5,
+        "north": 23.6
+      },
+      "elevation": {
+        "min": -2578,
+        "max": 21249,
+        "unit": "meters"
+      },
+      "image": {
+        "width": 141,
+        "height": 129,
+        "bitDepth": 8,
+        "format": "grayscale",
+        "normalization": "per-site min/max"
+      },
+      "type": "VOLCANIC HIGHLANDS",
+      "headline": "A mountain on a planetary scale.",
+      "description": "Explore the broad rise of a Martian volcano. Compare its summit and flanks through elevation and slope."
+    },
+    {
+      "name": "Valles Marineris",
+      "planet": "Mars",
+      "source": "NASA MOLA MEG128",
+      "heightmap": "output/valles_marineris_heightmap.png",
+      "location": {
+        "latitude": -14.3,
+        "longitude": 302.0
+      },
+      "bounds": {
+        "west": 285.0,
+        "east": 315.0,
+        "south": -20.0,
+        "north": -5.0
+      },
+      "elevation": {
+        "min": -5773,
+        "max": 6966,
+        "unit": "meters"
+      },
+      "image": {
+        "width": 141,
+        "height": 129,
+        "bitDepth": 8,
+        "format": "grayscale",
+        "normalization": "per-site min/max"
+      },
+      "type": "CANYON SYSTEM",
+      "headline": "Follow the fractures of Mars.",
+      "description": "Trace deep valleys and broken highlands. Draw a cross-section to reveal the relief across this vast region."
+    },
+    {
+      "name": "Gale Crater",
+      "planet": "Mars",
+      "source": "NASA MOLA MEG128",
+      "heightmap": "output/gale_crater_heightmap.png",
+      "location": {
+        "latitude": -5.4,
+        "longitude": 137.8
+      },
+      "bounds": {
+        "west": 135.5,
+        "east": 140.0,
+        "south": -7.5,
+        "north": -3.0
+      },
+      "elevation": {
+        "min": -4648,
+        "max": 1412,
+        "unit": "meters"
+      },
+      "image": {
+        "width": 141,
+        "height": 129,
+        "bitDepth": 8,
+        "format": "grayscale",
+        "normalization": "per-site min/max"
+      },
+      "type": "IMPACT BASIN",
+      "headline": "A different perspective on the crater.",
+      "description": "Explore a basin of contrasting elevations. Look for changes between the low floor and surrounding high ground."
+    },
+    {
+      "name": "Hellas Planitia",
+      "planet": "Mars",
+      "source": "NASA MOLA MEG128",
+      "heightmap": "output/hellas_planitia_heightmap.png",
+      "location": {
+        "latitude": -42.66,
+        "longitude": 70.0
+      },
+      "bounds": {
+        "west": 45.0,
+        "east": 95.0,
+        "south": -54.7,
+        "north": -27.7
+      },
+      "elevation": {
+        "min": -8208,
+        "max": 4329,
+        "unit": "meters"
+      },
+      "image": {
+        "width": 141,
+        "height": 129,
+        "bitDepth": 8,
+        "format": "grayscale",
+        "normalization": "per-site min/max"
+      },
+      "type": "LOWLAND BASIN",
+      "headline": "Go deep into the red planet.",
+      "description": "A broad landscape of lowlands and rising margins. Switch to elevation view to reveal its full range."
+    },
+    {
+      "name": "Elysium Mons",
+      "planet": "Mars",
+      "source": "NASA MOLA MEG128",
+      "heightmap": "output/elysium_mons_heightmap.png",
+      "location": {
+        "latitude": 24.75,
+        "longitude": 146.44
+      },
+      "bounds": {
+        "west": 142.0,
+        "east": 151.0,
+        "south": 20.0,
+        "north": 30.0
+      },
+      "elevation": {
+        "min": -2088,
+        "max": 14115,
+        "unit": "meters"
+      },
+      "image": {
+        "width": 141,
+        "height": 129,
+        "bitDepth": 8,
+        "format": "grayscale",
+        "normalization": "per-site min/max"
+      },
+      "type": "VOLCANIC HIGHLANDS",
+      "headline": "Explore a world built by volcanoes.",
+      "description": "Move from the surrounding plains toward the highlands. Use the slope layer to see where the terrain steepens."
+    },
+    {
+      "name": "Argyre Planitia",
+      "planet": "Mars",
+      "source": "NASA MOLA MEG128",
+      "heightmap": "output/argyre_planitia_heightmap.png",
+      "location": {
+        "latitude": -49.84,
+        "longitude": 316.69
+      },
+      "bounds": {
+        "west": 305.0,
+        "east": 328.0,
+        "south": -58.0,
+        "north": -42.0
+      },
+      "elevation": {
+        "min": -5250,
+        "max": 6130,
+        "unit": "meters"
+      },
+      "image": {
+        "width": 141,
+        "height": 129,
+        "bitDepth": 8,
+        "format": "grayscale",
+        "normalization": "per-site min/max"
+      },
+      "type": "LOWLAND BASIN",
+      "headline": "Find a path through the basin.",
+      "description": "Inspect a landscape of low ground and rugged margins. Try a profile across its changing relief."
     }
   ]
 }
